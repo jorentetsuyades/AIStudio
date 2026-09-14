@@ -1,0 +1,9 @@
+node_modules/
+frontend/dist/
+backend/dist/
+ai-service/.venv/
+__pycache__/
+*.pyc
+data/generations.json
+generated/*.png
+.angular/

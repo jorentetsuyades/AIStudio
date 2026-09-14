@@ -1,0 +1,53 @@
+<div class="studio-shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">J</span><span>Joren AI <strong>Studio</strong></span></div>
+    <nav>
+      @for (item of ['Generate', 'Enhance', 'History', 'Models', 'Settings']; track item) {
+        <button class="nav-item" [class.active]="activeView() === item" (click)="activeView.set(item)"><span class="nav-icon">{{ item === 'Generate' ? '+' : item === 'Enhance' ? '↗' : item === 'History' ? '↺' : item === 'Models' ? '◈' : '◌' }}</span>{{ item }}</button>
+      }
+    </nav>
+    <div class="sidebar-footer"><div class="status-dot"></div><span>Local system</span><span class="status-label">{{ gpu()?.available ? 'Ready' : 'Offline' }}</span></div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar"><div><p class="eyebrow">LOCAL CREATIVE ENGINE</p><h1>Make something <em>unreal.</em></h1></div><div class="topbar-chip"><span class="pulse" [class.offline]="!aiServiceOnline()"></span>{{ localStatus() }}</div></header>
+    @if (activeView() === 'Generate') {
+      <section class="workspace">
+        <div class="control-column">
+          <div class="section-heading"><div><p class="eyebrow">TEXT TO IMAGE</p><h2>Describe your vision</h2></div><span class="step">01</span></div>
+          <label class="field-label" for="prompt">Prompt</label>
+          <textarea id="prompt" class="prompt-input" [value]="prompt()" (input)="prompt.set($any($event.target).value)" placeholder="Describe the image you want to create..."></textarea>
+          <div class="settings-grid"><label class="setting"><span>Model</span><select [value]="model()" (change)="model.set($any($event.target).value)"><option value="sdxl-turbo">SDXL Turbo</option></select></label><label class="setting"><span>Canvas</span><select [value]="resolution()" (change)="resolution.set($any($event.target).value)"><option value="512">512 x 512</option><option value="768">768 x 768</option><option value="1024">1024 x 1024</option></select></label></div>
+          <details class="advanced"><summary>Advanced settings <span>+</span></summary><label class="field-label" for="negative">Negative prompt</label><textarea id="negative" class="negative-input" [value]="negativePrompt()" (input)="negativePrompt.set($any($event.target).value)" placeholder="Things to avoid in the image..."></textarea></details>
+          @if (resolution() === '1024') { <p class="vr-warning">1024 x 1024 uses more VRAM. Generation may be slower on an 8GB GPU.</p> }
+          @if (errorMessage()) { <p class="error-message">{{ errorMessage() }}</p> }
+          <div class="action-row"><button class="button secondary" (click)="clear()">Clear</button><button class="button primary" [disabled]="isGenerating() || !prompt().trim()" (click)="generate()">{{ isGenerating() ? 'Generating...' : 'Generate image' }} <span>-></span></button></div>
+        </div>
+        <div class="preview-column">
+          <div class="section-heading"><div><p class="eyebrow">OUTPUT</p><h2>Your canvas</h2></div>@if (result()) { <span class="duration">{{ (result()!.durationMs / 1000).toFixed(1) }}s</span> }</div>
+          <div class="preview-frame" [class.loading]="isGenerating()">
+            @if (result()) { <img [src]="imageUrl(result()!.imageUrl)" alt="Generated artwork" /> } @else if (isGenerating()) { <div class="loading-state"><div class="loader"></div><p>Rendering your vision</p><span>Using local CUDA acceleration</span></div> } @else { <div class="empty-state"><div class="empty-icon">*</div><p>Your generated image will appear here</p><span>Enter a prompt and let the studio create</span></div> }
+          </div>
+          @if (result()) { <div class="result-meta"><span>Seed {{ result()!.seed }}</span><span>{{ result()!.width }} x {{ result()!.height }}</span><a class="save-link" [href]="imageUrl(result()!.imageUrl)" download>Save image -></a><button class="regenerate" (click)="generate()">Regenerate</button></div> }
+        </div>
+      </section>
+    } @else if (activeView() === 'Enhance') {
+      <section class="workspace enhance-workspace">
+        <div class="control-column">
+          <div class="section-heading"><div><p class="eyebrow">IMAGE TO IMAGE</p><h2>Refine an image</h2></div><span class="step">02</span></div>
+          <label class="upload-zone" [class.has-image]="sourceImage()"><input type="file" accept="image/png,image/jpeg,image/webp" (change)="onImageSelected($event)" />@if (sourceImage()) { <img [src]="sourceImage()" alt="Selected source" /> } @else { <span class="upload-plus">+</span><strong>Choose an image</strong><small>PNG, JPG, or WebP up to 9MB</small> }</label>
+          <label class="field-label" for="enhance-prompt">Enhancement direction</label><textarea id="enhance-prompt" class="prompt-input" [value]="prompt()" (input)="prompt.set($any($event.target).value)" placeholder="Describe the improvements you want..."></textarea>
+          <div class="settings-grid"><label class="setting"><span>Output size</span><select [value]="resolution()" (change)="resolution.set($any($event.target).value)"><option value="512">512 x 512</option><option value="768">768 x 768</option><option value="1024">1024 x 1024</option></select></label><label class="setting"><span>Preserve original</span><select [value]="enhancementStrength()" (change)="enhancementStrength.set($any($event.target).value)"><option value="0.2">High</option><option value="0.35">Balanced</option><option value="0.6">Creative</option></select></label></div>
+          @if (errorMessage()) { <p class="error-message">{{ errorMessage() }}</p> }
+          <div class="action-row"><button class="button secondary" (click)="clear()">Clear</button><button class="button primary" [disabled]="isGenerating() || !sourceImage()" (click)="enhance()">{{ isGenerating() ? 'Enhancing...' : 'Enhance image' }} <span>-></span></button></div>
+        </div>
+        <div class="preview-column"><div class="section-heading"><div><p class="eyebrow">OUTPUT</p><h2>Enhanced canvas</h2></div>@if (result()) { <span class="duration">{{ (result()!.durationMs / 1000).toFixed(1) }}s</span> }</div><div class="preview-frame" [class.loading]="isGenerating()">@if (result()) { <img [src]="imageUrl(result()!.imageUrl)" alt="Enhanced artwork" /> } @else if (sourceImage()) { <img class="source-preview" [src]="sourceImage()" alt="Source image preview" /> } @else { <div class="empty-state"><div class="empty-icon">+</div><p>Import an image to begin</p><span>Your enhanced result will appear here</span></div> }</div>@if (result()) { <div class="result-meta"><span>Seed {{ result()!.seed }}</span><span>{{ result()!.width }} x {{ result()!.height }}</span><a class="save-link" [href]="imageUrl(result()!.imageUrl)" download>Save image -></a></div> }</div>
+      </section>
+    } @else if (activeView() === 'History') {
+      <section class="page-section"><div class="section-heading"><div><p class="eyebrow">YOUR WORK</p><h2>Generation history</h2></div></div><div class="history-grid">@for (item of history(); track item.id) { <button class="history-card" (click)="reuseGeneration(item)"><img [src]="imageUrl(item.imageUrl)" alt="" /><span>{{ item.prompt }}</span><small>{{ item.width }} x {{ item.height }} · {{ item.model }}</small></button> } @empty { <p class="empty-copy">Your local generations will be listed here.</p> }</div></section>
+    } @else {
+      <section class="page-section"><div class="section-heading"><div><p class="eyebrow">SYSTEM</p><h2>{{ activeView() }}</h2></div></div><div class="info-panel"><p>This workspace is ready for local model extensions.</p><span>Current model: {{ model() }} · Inference stays on this PC.</span></div></section>
+    }
+    <section class="system-strip"><div><p class="eyebrow">SYSTEM STATUS</p><strong>{{ gpu()?.name ?? 'Checking GPU...' }}</strong></div><div class="metric"><span>GPU load</span><strong>{{ gpu()?.utilizationPercent ?? '--' }}%</strong></div><div class="metric"><span>VRAM</span><strong>{{ gpu()?.memoryUsedMb ? (gpu()!.memoryUsedMb! / 1024).toFixed(1) : '--' }} / 8 GB</strong></div><div class="metric"><span>Temperature</span><strong>{{ gpu()?.temperatureC ?? '--' }}°C</strong></div><div class="metric"><span>RAM</span><strong>{{ gpu()?.ramUsedMb ? (gpu()!.ramUsedMb / 1024).toFixed(1) : '--' }} GB</strong></div></section>
+  </main>
+</div>

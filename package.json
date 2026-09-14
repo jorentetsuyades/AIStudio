@@ -1,0 +1,11 @@
+{
+  "name": "joren-ai-studio",
+  "private": true,
+  "scripts": {
+    "start:frontend": "npm --prefix frontend start",
+    "start:backend": "npm --prefix backend run dev",
+    "start:ai-service": "ai-service\\.venv\\Scripts\\python.exe -m uvicorn --app-dir ai-service main:app --host 127.0.0.1 --port 8000",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build"
+  }
+}
