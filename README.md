@@ -72,7 +72,22 @@ The frontend checks `/api/system/health` every five seconds. When the local back
 
 ## GitHub Pages frontend
 
-You can publish the Angular build as a visual frontend demo. From the `frontend` directory, build with your repository name as the base path:
+This repository includes `.github/workflows/deploy-pages.yml`, which builds and deploys the Angular frontend automatically whenever `main` changes.
+
+One-time setup on GitHub:
+
+1. Open the repository **Settings**.
+2. Select **Pages** under **Code and automation**.
+3. Set **Source** to **GitHub Actions**.
+4. Push to `main` or run the **Deploy Angular frontend to GitHub Pages** workflow manually under **Actions**.
+
+The site URL will be:
+
+```text
+https://jorentetsuyades.github.io/AIStudio/
+```
+
+You can also publish the Angular build manually. From the `frontend` directory, build with your repository name as the base path:
 
 ```powershell
 npm run build -- --base-href /YOUR-REPOSITORY-NAME/
